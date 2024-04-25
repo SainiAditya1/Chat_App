@@ -1,0 +1,36 @@
+name: Close PR with .md changes
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  close_pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Get changed files
+        id: files
+        uses: jitterbit/get-changed-files@v1
+
+      - name: Check for .md changes
+        id: check
+        run: |
+          for file in ${{ steps.files.outputs.all }}; do
+            if [[ "$file" == *.md ]]; then
+              echo "::set-output name=md_changed::true"
+              break
+            fi
+          done
+        shell: bash
+
+      - name: Close PR
+        if: steps.check.outputs.md_changed == 'true'
+        uses: peter-evans/close-pull-request@v1
+        with:
+          comment: "Pull request automatically closed because it contains changes to .md files."
